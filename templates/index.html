@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Brawler Recognition</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #c0c0c0; color: #000; margin: 20px; }
+  .upload { display: inline-block; background: #a0a0a0; border: 2px outset #d0d0d0; padding: 14px 28px; font-size: 18px; cursor: pointer; }
+  input[type=file] { display: none; }
+  table { border-collapse: collapse; }
+  td, th { border: 1px solid #808080; padding: 3px 10px; text-align: left; }
+  img { border: 1px solid #808080; }
+  .small { font-size: 12px; }
+</style>
+</head>
+<body>
+
+<form method="post" enctype="multipart/form-data">
+  <label class="upload">загрузи сюда бравлера братан
+    <input type="file" name="photo" accept="image/*" onchange="this.form.submit()">
+  </label>
+</form>
+
+{% if error %}<p>{{ error }}</p>{% endif %}
+
+{% if result %}
+<h2>{{ result.name }}</h2>
+{% if not result.sure %}<p>The best probability is lower than 50%, so the model is not sure.</p>{% endif %}
+
+<table>
+  <tr><th>Top-5</th><th>Probability</th></tr>
+  {% for name, p in result.top5 %}<tr><td>{{ name }}</td><td>{{ p }}</td></tr>{% endfor %}
+</table>
+
+<p>
+  <img src="{{ result.image }}" width="224" height="224">
+  <img src="{{ result.heatmap }}" width="224" height="224">
+</p>
+<p class="small">Left: the picture the model sees (224x224). Right: Grad-CAM heatmap, red = parts of the picture that pushed the model to its answer.</p>
+
+<p>Most similar original screenshots (DINOv2 features, cosine similarity):</p>
+<table>
+  <tr>{% for img, name, s in result.neighbors %}<td><img src="{{ img }}" width="110" height="110"><br>{{ name }} ({{ s }})</td>{% endfor %}</tr>
+</table>
+
+<p>Prediction time: {{ result.ms }} ms, mean over {{ result.runs }} pictures: {{ result.mean_ms }} ms</p>
+
+<hr>
+<p class="small">
+  Device: {{ info.device }}, {{ info.threads }} threads | OS: {{ info.os }} | torch {{ info.torch }} | Model: {{ info.model }}<br>
+  Browser: {{ browser }}
+</p>
+
+<table class="small">
+  <tr><th>Model</th><th>5-fold CV accuracy</th><th>5-fold CV macro-F1</th></tr>
+  {% for title, acc, f1 in metrics %}<tr><td>{{ title }}</td><td>{{ acc }}</td><td>{{ f1 }}</td></tr>{% endfor %}
+</table>
+
+<p class="small">
+  Student project for the Computer Vision course (Astana IT University), not commercial. Brawl Stars and its characters belong to Supercell.
+  Uploaded pictures are not saved: they are only kept in memory while the answer is computed.
+  The model knows only 10 brawlers: bull, leon, shelly, spike, 8-bit, bibi, bo, emz, frank, miko. Other brawlers or new skins can be recognized wrongly.
+  90% of the training images are augmented (synthetic) copies of the real screenshots; only real screenshots were used for testing.
+</p>
+{% endif %}
+
+</body>
+</html>
